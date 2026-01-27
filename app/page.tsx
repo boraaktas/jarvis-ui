@@ -8,6 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card } from '@/components/ui/card';
 import { ClawdbotClient, Message } from '@/lib/clawdbot';
 
+/**
+ * Available AI models for selection
+ * 
+ * TODO: Move this to a config file or fetch from gateway
+ */
 const MODELS = [
   { value: 'anthropic/claude-sonnet-4-5', label: 'Claude Sonnet 4.5 (Best)' },
   { value: 'openai/gpt-4.1', label: 'GPT-4.1 (Excellent)' },
@@ -15,7 +20,18 @@ const MODELS = [
   { value: 'openrouter/google/gemini-2.0-flash-exp:free', label: 'Gemini 2.0 Flash (Free)' },
 ];
 
+/**
+ * Main chat interface component
+ * 
+ * Features:
+ * - Real-time chat with Clawdbot via WebSocket
+ * - Model selection dropdown
+ * - Connection status indicator
+ * - Auto-scrolling message area
+ * - Enter to send, Shift+Enter for newline
+ */
 export default function Home() {
+  // State management
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [selectedModel, setSelectedModel] = useState(MODELS[0].value);
@@ -23,8 +39,10 @@ export default function Home() {
   const [client, setClient] = useState<ClawdbotClient | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Initialize Clawdbot client on mount
   useEffect(() => {
     // Initialize Clawdbot client
+    // TODO: Move these to environment variables (.env.local)
     const clawdbot = new ClawdbotClient({
       gatewayUrl: 'ws://127.0.0.1:18789',
       token: 'e8567391485f6a532c333d0e774dd37971569f13acbdb093'

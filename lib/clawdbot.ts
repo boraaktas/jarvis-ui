@@ -1,14 +1,38 @@
+/**
+ * Represents a chat message in the conversation
+ */
 export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: number;
 }
 
+/**
+ * Configuration options for ClawdbotClient
+ */
 export interface ClawdbotConfig {
-  gatewayUrl: string;
-  token?: string;
+  gatewayUrl: string;  // WebSocket URL (e.g., ws://127.0.0.1:18789)
+  token?: string;      // Optional auth token for gateway
 }
 
+/**
+ * WebSocket client for Clawdbot Gateway
+ * 
+ * Handles connection, authentication, and message routing
+ * between the UI and Clawdbot Gateway.
+ * 
+ * @example
+ * ```typescript
+ * const client = new ClawdbotClient({
+ *   gatewayUrl: 'ws://127.0.0.1:18789',
+ *   token: 'your-token'
+ * });
+ * 
+ * client.onMessage((msg) => console.log(msg));
+ * client.connect();
+ * client.sendMessage('Hello!', 'anthropic/claude-sonnet-4-5');
+ * ```
+ */
 export class ClawdbotClient {
   private ws: WebSocket | null = null;
   private config: ClawdbotConfig;
@@ -19,6 +43,12 @@ export class ClawdbotClient {
     this.config = config;
   }
 
+  /**
+   * Establish WebSocket connection to Clawdbot Gateway
+   * 
+   * Automatically authenticates if token is provided,
+   * and requests recent chat history.
+   */
   connect() {
     this.notifyStatus('connecting');
     
@@ -77,6 +107,9 @@ export class ClawdbotClient {
     };
   }
 
+  /**
+   * Close the WebSocket connection
+   */
   disconnect() {
     if (this.ws) {
       this.ws.close();
@@ -84,6 +117,12 @@ export class ClawdbotClient {
     }
   }
 
+  /**
+   * Send a message to Clawdbot
+   * 
+   * @param content - The message text
+   * @param model - Optional model override (e.g., 'anthropic/claude-sonnet-4-5')
+   */
   sendMessage(content: string, model?: string) {
     const params: any = {
       message: content,
@@ -101,10 +140,20 @@ export class ClawdbotClient {
     });
   }
 
+  /**
+   * Register a handler for incoming messages
+   * 
+   * @param handler - Callback function called when a message is received
+   */
   onMessage(handler: (message: Message) => void) {
     this.messageHandlers.push(handler);
   }
 
+  /**
+   * Register a handler for connection status changes
+   * 
+   * @param handler - Callback function called when connection status changes
+   */
   onStatus(handler: (status: 'connecting' | 'connected' | 'disconnected') => void) {
     this.statusHandlers.push(handler);
   }
