@@ -93,44 +93,17 @@ export default function Home() {
   };
 
   return (
-    <div className="flex h-screen bg-background">
-      {/* Sidebar */}
-      <div className="w-64 border-r p-4 space-y-4">
-        <div>
-          <h1 className="text-2xl font-bold mb-2">Jarvis UI</h1>
+    <div className="flex h-screen bg-background flex-col">
+      {/* Header */}
+      <div className="border-b p-4">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-2xl font-bold">Jarvis UI</h1>
           <p className="text-sm text-muted-foreground">Custom Clawdbot Interface</p>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Model Selection</label>
-          <Select value={selectedModel} onValueChange={setSelectedModel}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {MODELS.map((model) => (
-                <SelectItem key={model.value} value={model.value}>
-                  {model.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="pt-4">
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${
-              status === 'connected' ? 'bg-green-500' :
-              status === 'connecting' ? 'bg-yellow-500' :
-              'bg-red-500'
-            }`} />
-            <span className="text-sm text-muted-foreground capitalize">{status}</span>
-          </div>
         </div>
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Messages */}
         <ScrollArea className="flex-1 p-4" ref={scrollRef}>
           <div className="space-y-4 max-w-4xl mx-auto">
@@ -160,21 +133,50 @@ export default function Home() {
 
         {/* Input Area */}
         <div className="border-t p-4">
-          <div className="max-w-4xl mx-auto flex gap-2">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Type your message..."
-              disabled={status !== 'connected'}
-              className="flex-1"
-            />
-            <Button
-              onClick={handleSend}
-              disabled={status !== 'connected' || !input.trim()}
-            >
-              Send
-            </Button>
+          <div className="max-w-4xl mx-auto">
+            {/* Model Selection Bar */}
+            <div className="flex items-center gap-3 mb-3">
+              <Select value={selectedModel} onValueChange={setSelectedModel}>
+                <SelectTrigger className="w-[300px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MODELS.map((model) => (
+                    <SelectItem key={model.value} value={model.value}>
+                      {model.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {/* Connection Status */}
+              <div className="flex items-center gap-2 ml-auto">
+                <div className={`w-2 h-2 rounded-full ${
+                  status === 'connected' ? 'bg-green-500' :
+                  status === 'connecting' ? 'bg-yellow-500' :
+                  'bg-red-500'
+                }`} />
+                <span className="text-sm text-muted-foreground capitalize">{status}</span>
+              </div>
+            </div>
+            
+            {/* Message Input */}
+            <div className="flex gap-2">
+              <Input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Type your message..."
+                disabled={status !== 'connected'}
+                className="flex-1"
+              />
+              <Button
+                onClick={handleSend}
+                disabled={status !== 'connected' || !input.trim()}
+              >
+                Send
+              </Button>
+            </div>
           </div>
         </div>
       </div>
