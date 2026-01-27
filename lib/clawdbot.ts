@@ -5,6 +5,7 @@ export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: number;
+  isStreaming?: boolean;  // True if message is still being generated
 }
 
 /**
@@ -37,6 +38,7 @@ export class ClawdbotClient {
   private ws: WebSocket | null = null;
   private config: ClawdbotConfig;
   private messageHandlers: ((message: Message) => void)[] = [];
+  private streamHandlers: ((content: string) => void)[] = [];
   private statusHandlers: ((status: 'connecting' | 'connected' | 'disconnected') => void)[] = [];
 
   constructor(config: ClawdbotConfig) {
@@ -85,11 +87,21 @@ export class ClawdbotClient {
         
         if (data.method === 'chat' && data.params?.message) {
           const msg = data.params.message;
-          this.notifyMessage({
-            role: msg.role,
-            content: msg.content || '',
-            timestamp: Date.now()
-          });
+          const content = msg.content || '';
+          const isStreaming = data.params.streaming === true;
+          
+          if (isStreaming) {
+            // Streaming chunk - notify stream handlers
+            this.notifyStream(content);
+          } else {
+            // Complete message - notify message handlers
+            this.notifyMessage({
+              role: msg.role,
+              content,
+              timestamp: Date.now(),
+              isStreaming: false
+            });
+          }
         }
       } catch (error) {
         console.error('Error parsing message:', error);
@@ -163,6 +175,15 @@ export class ClawdbotClient {
   }
 
   /**
+   * Register a handler for streaming content chunks
+   * 
+   * @param handler - Callback function called when streaming content arrives
+   */
+  onStream(handler: (content: string) => void) {
+    this.streamHandlers.push(handler);
+  }
+
+  /**
    * Register a handler for connection status changes
    * 
    * @param handler - Callback function called when connection status changes
@@ -179,6 +200,10 @@ export class ClawdbotClient {
 
   private notifyMessage(message: Message) {
     this.messageHandlers.forEach(handler => handler(message));
+  }
+
+  private notifyStream(content: string) {
+    this.streamHandlers.forEach(handler => handler(content));
   }
 
   private notifyStatus(status: 'connecting' | 'connected' | 'disconnected') {

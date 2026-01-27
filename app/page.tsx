@@ -38,6 +38,7 @@ export default function Home() {
   const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected'>('disconnected');
   const [client, setClient] = useState<ClawdbotClient | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [streamingContent, setStreamingContent] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Initialize Clawdbot client on mount
@@ -54,6 +55,15 @@ export default function Home() {
       // Stop generating indicator when assistant responds
       if (message.role === 'assistant') {
         setIsGenerating(false);
+        setStreamingContent(''); // Clear streaming content
+      }
+    });
+
+    clawdbot.onStream((content) => {
+      // Append streaming content
+      setStreamingContent(prev => prev + content);
+      if (!isGenerating) {
+        setIsGenerating(true);
       }
     });
 
@@ -88,6 +98,7 @@ export default function Home() {
     setMessages(prev => [...prev, userMessage]);
     client.sendMessage(input, selectedModel);
     setInput('');
+    setStreamingContent('');
     setIsGenerating(true);
   };
 
@@ -135,15 +146,19 @@ export default function Home() {
               </Card>
             ))}
             
-            {/* Typing Indicator */}
+            {/* Streaming Message or Typing Indicator */}
             {isGenerating && (
               <Card className="p-4 bg-muted max-w-[80%]">
                 <div className="text-xs font-semibold mb-1 opacity-70">Jarvis</div>
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                  <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                  <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                </div>
+                {streamingContent ? (
+                  <div className="whitespace-pre-wrap">{streamingContent}</div>
+                ) : (
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  </div>
+                )}
               </Card>
             )}
             
