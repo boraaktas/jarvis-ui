@@ -7,15 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Planned
-- Message streaming support
+### In Progress
 - Markdown rendering with code syntax highlighting
 - Chat history persistence (localStorage)
+
+### Planned
 - Settings panel (theme, font size, etc.)
 - Multiple chat sessions/tabs
 - Export chat to file
 - Keyboard shortcuts
 - Voice input support
+- Environment variable configuration
+
+## [0.1.1] - 2026-01-28
+
+### Added
+- **Streaming responses**: Messages now appear word-by-word as they're generated
+- **Stop button**: Abort message generation mid-response (chat.abort)
+- **Typing indicator**: Animated dots show when waiting for first chunk
+- **Improved UX**: Model selector moved to input area (Cursor-style layout)
+
+### Changed
+- Moved model selection dropdown from sidebar to bottom next to message input
+- Removed sidebar, added top header with title
+- Input is disabled during message generation
+- Stop button (red) replaces Send button while generating
+
+### Technical
+- Added `isStreaming` flag to Message interface
+- Added `onStream()` handler to ClawdbotClient for streaming chunks
+- Added `abortMessage()` method to ClawdbotClient
+- Track streaming content separately from complete messages
 
 ## [0.1.0] - 2026-01-28
 
