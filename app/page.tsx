@@ -37,6 +37,7 @@ export default function Home() {
   const [selectedModel, setSelectedModel] = useState(MODELS[0].value);
   const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected'>('disconnected');
   const [client, setClient] = useState<ClawdbotClient | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Initialize Clawdbot client on mount
@@ -50,6 +51,10 @@ export default function Home() {
 
     clawdbot.onMessage((message) => {
       setMessages(prev => [...prev, message]);
+      // Stop generating indicator when assistant responds
+      if (message.role === 'assistant') {
+        setIsGenerating(false);
+      }
     });
 
     clawdbot.onStatus((newStatus) => {
@@ -83,6 +88,13 @@ export default function Home() {
     setMessages(prev => [...prev, userMessage]);
     client.sendMessage(input, selectedModel);
     setInput('');
+    setIsGenerating(true);
+  };
+
+  const handleStop = () => {
+    if (!client) return;
+    client.abortMessage();
+    setIsGenerating(false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -122,7 +134,20 @@ export default function Home() {
                 <div className="whitespace-pre-wrap">{message.content}</div>
               </Card>
             ))}
-            {messages.length === 0 && (
+            
+            {/* Typing Indicator */}
+            {isGenerating && (
+              <Card className="p-4 bg-muted max-w-[80%]">
+                <div className="text-xs font-semibold mb-1 opacity-70">Jarvis</div>
+                <div className="flex gap-1">
+                  <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                  <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                  <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                </div>
+              </Card>
+            )}
+            
+            {messages.length === 0 && !isGenerating && (
               <div className="text-center text-muted-foreground py-12">
                 <h2 className="text-2xl font-bold mb-2">Welcome to Jarvis UI</h2>
                 <p>Start chatting with your AI assistant</p>
@@ -167,15 +192,24 @@ export default function Home() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Type your message..."
-                disabled={status !== 'connected'}
+                disabled={status !== 'connected' || isGenerating}
                 className="flex-1"
               />
-              <Button
-                onClick={handleSend}
-                disabled={status !== 'connected' || !input.trim()}
-              >
-                Send
-              </Button>
+              {isGenerating ? (
+                <Button
+                  onClick={handleStop}
+                  variant="destructive"
+                >
+                  Stop
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSend}
+                  disabled={status !== 'connected' || !input.trim()}
+                >
+                  Send
+                </Button>
+              )}
             </div>
           </div>
         </div>

@@ -141,6 +141,19 @@ export class ClawdbotClient {
   }
 
   /**
+   * Abort the current message generation
+   * Stops the AI from continuing its response
+   */
+  abortMessage() {
+    this.send({
+      method: 'chat.abort',
+      params: {
+        sessionKey: 'jarvis-ui'
+      }
+    });
+  }
+
+  /**
    * Register a handler for incoming messages
    * 
    * @param handler - Callback function called when a message is received
