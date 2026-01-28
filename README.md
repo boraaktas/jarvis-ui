@@ -9,6 +9,13 @@ A modern, custom chat interface for Clawdbot with advanced model selection.
 - ⚡ **Real-time** - WebSocket connection to Clawdbot Gateway
 - 🌙 **Dark Mode** - Beautiful dark theme by default
 - 📱 **Responsive** - Works on desktop and mobile
+- ⏸️ **Stop Generation** - Abort AI responses mid-stream
+- 📝 **Streaming** - See responses appear word-by-word
+- 📤 **Export Chat** - Download conversations as JSON
+- 🗑️ **Clear Chat** - Reset conversations with confirmation
+- 📊 **Sidebar Menu** - Session info, settings, and actions
+- ✅ **Tested** - Jest + React Testing Library
+- 🔄 **CI/CD** - Automated testing with GitHub Actions
 
 ## Tech Stack
 
@@ -44,6 +51,19 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ```bash
 npm run build
 npm start
+```
+
+### Testing
+
+```bash
+# Run tests once
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
 ```
 
 ## Configuration

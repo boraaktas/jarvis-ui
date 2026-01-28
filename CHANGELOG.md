@@ -14,10 +14,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Planned
 - Settings panel (theme, font size, etc.)
 - Multiple chat sessions/tabs
-- Export chat to file
 - Keyboard shortcuts
 - Voice input support
 - Environment variable configuration
+
+## [0.2.0] - 2026-01-28
+
+### Added
+- **Testing Infrastructure**: Jest + React Testing Library setup
+- **CI/CD Pipeline**: GitHub Actions for automated testing, linting, and builds
+- **Sidebar Menu**: Slide-in menu with session info and actions
+- **Export Chat**: Download conversations as JSON files
+- **Clear Chat**: Reset conversation with confirmation
+- **Session Info**: Display message count and session key
+- **Test Coverage**: Upload to Codecov in CI pipeline
+
+### Technical
+- Jest configuration for Next.js
+- GitHub Actions workflow (test, lint, build jobs)
+- ClawdbotClient unit tests
+- Sidebar component with Sheet UI
+- Export/clear chat functionality
 
 ## [0.1.1] - 2026-01-28
 
