@@ -61,27 +61,31 @@ describe('ClawdbotClient', () => {
   test('should handle message callbacks', (done) => {
     client.onMessage((message) => {
       expect(message).toBeDefined();
-      expect(message.role).toBeDefined();
-      expect(message.content).toBeDefined();
+      expect(message.role).toBe('assistant');
+      expect(message.content).toBe('Test message');
       done();
     });
 
-    // Manually trigger a message
-    const ws = (client as any).ws;
-    if (ws && ws.onmessage) {
-      ws.onmessage({
-        data: JSON.stringify({
-          type: 'event',
-          event: 'chat',
-          payload: {
-            message: {
-              role: 'assistant',
-              content: 'Test message'
+    client.connect();
+
+    // Wait for connection, then manually trigger a message
+    setTimeout(() => {
+      const ws = (client as any).ws;
+      if (ws && ws.onmessage) {
+        ws.onmessage({
+          data: JSON.stringify({
+            type: 'event',
+            event: 'chat',
+            payload: {
+              message: {
+                role: 'assistant',
+                content: 'Test message'
+              }
             }
-          }
-        })
-      });
-    }
+          })
+        });
+      }
+    }, 10);
   });
 
   test('should disconnect properly', () => {
