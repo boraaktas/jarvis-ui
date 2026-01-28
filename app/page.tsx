@@ -46,11 +46,11 @@ export default function Home() {
 
   // Initialize Clawdbot client on mount
   useEffect(() => {
-    // Initialize Clawdbot client
-    // TODO: Move these to environment variables (.env.local)
+    // Initialize Clawdbot client from environment variables
     const clawdbot = new ClawdbotClient({
-      gatewayUrl: 'ws://127.0.0.1:18789',
-      token: 'e8567391485f6a532c333d0e774dd37971569f13acbdb093'
+      gatewayUrl: process.env.NEXT_PUBLIC_GATEWAY_URL || 'ws://127.0.0.1:18789',
+      token: process.env.NEXT_PUBLIC_GATEWAY_TOKEN || '',
+      sessionKey: process.env.NEXT_PUBLIC_SESSION_KEY || 'jarvis-ui'
     });
 
     clawdbot.onMessage((message) => {
@@ -116,8 +116,9 @@ export default function Home() {
   };
 
   const handleExportChat = () => {
+    const sessionKey = process.env.NEXT_PUBLIC_SESSION_KEY || 'jarvis-ui';
     const chatData = {
-      sessionKey: 'jarvis-ui',
+      sessionKey,
       exportedAt: new Date().toISOString(),
       messageCount: messages.length,
       messages: messages.map(msg => ({

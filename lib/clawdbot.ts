@@ -14,6 +14,7 @@ export interface Message {
 export interface ClawdbotConfig {
   gatewayUrl: string;  // WebSocket URL (e.g., ws://127.0.0.1:18789)
   token?: string;      // Optional auth token for gateway
+  sessionKey?: string; // Session identifier for chat persistence (default: 'jarvis-ui')
 }
 
 /**
@@ -70,9 +71,11 @@ export class ClawdbotClient {
   private streamHandlers: ((content: string) => void)[] = [];
   private statusHandlers: ((status: 'connecting' | 'connected' | 'disconnected') => void)[] = [];
   private requestId = 0;
+  private sessionKey: string;
 
   constructor(config: ClawdbotConfig) {
     this.config = config;
+    this.sessionKey = config.sessionKey || 'jarvis-ui';
   }
 
   /**
@@ -145,7 +148,7 @@ export class ClawdbotClient {
             id: `${++this.requestId}`,
             method: 'chat.history',
             params: { 
-              sessionKey: 'jarvis-ui',
+              sessionKey: this.sessionKey,
               limit: 50 
             }
           });
@@ -228,7 +231,7 @@ export class ClawdbotClient {
   sendMessage(content: string, model?: string) {
     const params: SendMessageParams = {
       message: content,
-      sessionKey: 'jarvis-ui',
+      sessionKey: this.sessionKey,
       idempotencyKey: `${Date.now()}-${Math.random()}`
     };
     
@@ -254,7 +257,7 @@ export class ClawdbotClient {
       id: `${++this.requestId}`,
       method: 'chat.abort',
       params: {
-        sessionKey: 'jarvis-ui'
+        sessionKey: this.sessionKey
       }
     });
   }
