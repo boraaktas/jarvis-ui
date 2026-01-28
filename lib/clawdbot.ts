@@ -55,14 +55,23 @@ export class ClawdbotClient {
     this.notifyStatus('connecting');
     
     const url = this.config.gatewayUrl;
-    this.ws = new WebSocket(url);
+    console.log('Connecting to:', url);
+    
+    try {
+      this.ws = new WebSocket(url);
+    } catch (error) {
+      console.error('WebSocket creation failed:', error);
+      this.notifyStatus('disconnected');
+      return;
+    }
 
     this.ws.onopen = () => {
-      console.log('Connected to Clawdbot Gateway');
+      console.log('✅ Connected to Clawdbot Gateway');
       this.notifyStatus('connected');
       
       // Authenticate if token is provided
       if (this.config.token) {
+        console.log('Sending auth token...');
         this.send({
           method: 'connect',
           params: {
@@ -74,17 +83,36 @@ export class ClawdbotClient {
       }
       
       // Request chat history
+      console.log('Requesting chat history...');
       this.send({
         method: 'chat.history',
-        params: { limit: 50 }
+        params: { 
+          sessionKey: 'jarvis-ui',
+          limit: 50 
+        }
       });
     };
 
     this.ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('Received:', data);
+        console.log('📨 Received:', data);
         
+        // Handle chat.history response
+        if (data.result?.messages) {
+          console.log('📜 Loading chat history:', data.result.messages.length, 'messages');
+          data.result.messages.forEach((msg: any) => {
+            this.notifyMessage({
+              role: msg.role,
+              content: msg.content || '',
+              timestamp: Date.now(),
+              isStreaming: false
+            });
+          });
+          return;
+        }
+        
+        // Handle chat messages
         if (data.method === 'chat' && data.params?.message) {
           const msg = data.params.message;
           const content = msg.content || '';
@@ -92,9 +120,11 @@ export class ClawdbotClient {
           
           if (isStreaming) {
             // Streaming chunk - notify stream handlers
+            console.log('📝 Streaming:', content.substring(0, 50) + '...');
             this.notifyStream(content);
           } else {
             // Complete message - notify message handlers
+            console.log('✉️ Complete message:', content.substring(0, 50) + '...');
             this.notifyMessage({
               role: msg.role,
               content,
@@ -104,17 +134,20 @@ export class ClawdbotClient {
           }
         }
       } catch (error) {
-        console.error('Error parsing message:', error);
+        console.error('Error parsing message:', error, event.data);
       }
     };
 
-    this.ws.onclose = () => {
-      console.log('Disconnected from Clawdbot Gateway');
+    this.ws.onclose = (event) => {
+      console.log('❌ Disconnected from Clawdbot Gateway');
+      console.log('Close code:', event.code, 'Reason:', event.reason);
       this.notifyStatus('disconnected');
     };
 
     this.ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
+      console.error('❌ WebSocket error:', error);
+      console.error('Gateway URL:', this.config.gatewayUrl);
+      console.error('Make sure Clawdbot Gateway is running on ws://127.0.0.1:18789');
       this.notifyStatus('disconnected');
     };
   }
