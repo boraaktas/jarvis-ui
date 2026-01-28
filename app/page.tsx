@@ -39,6 +39,7 @@ export default function Home() {
   const [client, setClient] = useState<ClawdbotClient | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [streamingContent, setStreamingContent] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Initialize Clawdbot client on mount
@@ -162,7 +163,31 @@ export default function Home() {
               </Card>
             )}
             
-            {messages.length === 0 && !isGenerating && (
+            {/* Connection Error */}
+            {status === 'disconnected' && messages.length === 0 && (
+              <div className="text-center py-12">
+                <div className="text-destructive mb-4">
+                  <h2 className="text-2xl font-bold mb-2">⚠️ Connection Failed</h2>
+                  <p className="text-sm mb-4">Cannot connect to Clawdbot Gateway</p>
+                </div>
+                <div className="text-muted-foreground text-sm space-y-2 max-w-md mx-auto">
+                  <p>Make sure Clawdbot Gateway is running:</p>
+                  <code className="block bg-muted p-2 rounded">clawdbot gateway status</code>
+                  <p className="pt-4">Gateway should be listening on:</p>
+                  <code className="block bg-muted p-2 rounded">ws://127.0.0.1:18789</code>
+                  <p className="pt-4 text-xs">Check browser console (F12) for details</p>
+                </div>
+                <Button 
+                  onClick={() => client?.connect()} 
+                  className="mt-6"
+                  variant="outline"
+                >
+                  Retry Connection
+                </Button>
+              </div>
+            )}
+            
+            {messages.length === 0 && !isGenerating && status === 'connected' && (
               <div className="text-center text-muted-foreground py-12">
                 <h2 className="text-2xl font-bold mb-2">Welcome to Jarvis UI</h2>
                 <p>Start chatting with your AI assistant</p>
