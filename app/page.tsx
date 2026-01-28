@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
+import { Sidebar } from '@/components/Sidebar';
 import { ClawdbotClient, Message } from '@/lib/clawdbot';
 
 /**
@@ -109,6 +110,35 @@ export default function Home() {
     setIsGenerating(false);
   };
 
+  const handleClearChat = () => {
+    setMessages([]);
+    setStreamingContent('');
+    setIsGenerating(false);
+  };
+
+  const handleExportChat = () => {
+    const chatData = {
+      sessionKey: 'jarvis-ui',
+      exportedAt: new Date().toISOString(),
+      messageCount: messages.length,
+      messages: messages.map(msg => ({
+        role: msg.role,
+        content: msg.content,
+        timestamp: new Date(msg.timestamp).toISOString()
+      }))
+    };
+
+    const blob = new Blob([JSON.stringify(chatData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `jarvis-chat-${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -120,9 +150,18 @@ export default function Home() {
     <div className="flex h-screen bg-background flex-col">
       {/* Header */}
       <div className="border-b p-4">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl font-bold">Jarvis UI</h1>
-          <p className="text-sm text-muted-foreground">Custom Clawdbot Interface</p>
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Sidebar 
+              onClearChat={handleClearChat}
+              onExportChat={handleExportChat}
+              messageCount={messages.length}
+            />
+            <div>
+              <h1 className="text-2xl font-bold">Jarvis UI</h1>
+              <p className="text-sm text-muted-foreground">Custom Clawdbot Interface</p>
+            </div>
+          </div>
         </div>
       </div>
 
