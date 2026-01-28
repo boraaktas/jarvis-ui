@@ -17,6 +17,35 @@ export interface ClawdbotConfig {
 }
 
 /**
+ * Message format from chat history
+ */
+interface HistoryMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+/**
+ * Parameters for sending a message
+ */
+interface SendMessageParams extends Record<string, unknown> {
+  message: string;
+  sessionKey: string;
+  idempotencyKey: string;
+  model?: string;
+}
+
+/**
+ * Generic WebSocket message structure
+ */
+interface WebSocketMessage {
+  type: string;
+  id?: string;
+  method?: string;
+  params?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+/**
  * WebSocket client for Clawdbot Gateway
  * 
  * Handles connection, authentication, and message routing
@@ -126,7 +155,7 @@ export class ClawdbotClient {
         // Handle chat.history response
         if (data.type === 'res' && data.payload?.messages) {
           console.log('📜 Loading chat history:', data.payload.messages.length, 'messages');
-          data.payload.messages.forEach((msg: any) => {
+          (data.payload.messages as HistoryMessage[]).forEach((msg) => {
             this.notifyMessage({
               role: msg.role,
               content: msg.content || '',
@@ -197,7 +226,7 @@ export class ClawdbotClient {
    * @param model - Optional model override (e.g., 'anthropic/claude-sonnet-4-5')
    */
   sendMessage(content: string, model?: string) {
-    const params: any = {
+    const params: SendMessageParams = {
       message: content,
       sessionKey: 'jarvis-ui',
       idempotencyKey: `${Date.now()}-${Math.random()}`
@@ -257,7 +286,7 @@ export class ClawdbotClient {
     this.statusHandlers.push(handler);
   }
 
-  private send(data: any) {
+  private send(data: WebSocketMessage) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(data));
     }

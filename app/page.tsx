@@ -37,11 +37,12 @@ export default function Home() {
   const [input, setInput] = useState('');
   const [selectedModel, setSelectedModel] = useState(MODELS[0].value);
   const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected'>('disconnected');
-  const [client, setClient] = useState<ClawdbotClient | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [streamingContent, setStreamingContent] = useState('');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  
+  // Use ref for client to avoid setState in effect
+  const clientRef = useRef<ClawdbotClient | null>(null);
 
   // Initialize Clawdbot client on mount
   useEffect(() => {
@@ -64,9 +65,7 @@ export default function Home() {
     clawdbot.onStream((content) => {
       // Append streaming content
       setStreamingContent(prev => prev + content);
-      if (!isGenerating) {
-        setIsGenerating(true);
-      }
+      setIsGenerating(true);
     });
 
     clawdbot.onStatus((newStatus) => {
@@ -74,7 +73,7 @@ export default function Home() {
     });
 
     clawdbot.connect();
-    setClient(clawdbot);
+    clientRef.current = clawdbot;
 
     return () => {
       clawdbot.disconnect();
@@ -89,7 +88,7 @@ export default function Home() {
   }, [messages]);
 
   const handleSend = () => {
-    if (!input.trim() || !client) return;
+    if (!input.trim() || !clientRef.current) return;
 
     const userMessage: Message = {
       role: 'user',
@@ -98,15 +97,15 @@ export default function Home() {
     };
 
     setMessages(prev => [...prev, userMessage]);
-    client.sendMessage(input, selectedModel);
+    clientRef.current.sendMessage(input, selectedModel);
     setInput('');
     setStreamingContent('');
     setIsGenerating(true);
   };
 
   const handleStop = () => {
-    if (!client) return;
-    client.abortMessage();
+    if (!clientRef.current) return;
+    clientRef.current.abortMessage();
     setIsGenerating(false);
   };
 
@@ -217,7 +216,7 @@ export default function Home() {
                   <p className="pt-4 text-xs">Check browser console (F12) for details</p>
                 </div>
                 <Button 
-                  onClick={() => client?.connect()} 
+                  onClick={() => clientRef.current?.connect()} 
                   className="mt-6"
                   variant="outline"
                 >

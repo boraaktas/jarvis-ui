@@ -1,11 +1,21 @@
 import { ClawdbotClient, ClawdbotConfig } from '@/lib/clawdbot';
 
+// Mock WebSocket event types
+interface MockMessageEvent {
+  data: string;
+}
+
+interface MockCloseEvent {
+  code: number;
+  reason: string;
+}
+
 // Mock WebSocket
 class MockWebSocket {
   onopen: (() => void) | null = null;
-  onmessage: ((event: any) => void) | null = null;
-  onerror: ((event: any) => void) | null = null;
-  onclose: ((event: any) => void) | null = null;
+  onmessage: ((event: MockMessageEvent) => void) | null = null;
+  onerror: ((event: Event) => void) | null = null;
+  onclose: ((event: MockCloseEvent) => void) | null = null;
   readyState = WebSocket.CONNECTING;
 
   constructor(public url: string) {
@@ -15,8 +25,9 @@ class MockWebSocket {
     }, 0);
   }
 
-  send(data: string) {
-    // Mock send
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  send(_data: string) {
+    // Mock send - parameter intentionally unused
   }
 
   close() {
@@ -26,6 +37,7 @@ class MockWebSocket {
 }
 
 // Replace global WebSocket
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 global.WebSocket = MockWebSocket as any;
 
 describe('ClawdbotClient', () => {
@@ -70,6 +82,8 @@ describe('ClawdbotClient', () => {
 
     // Wait for connection, then manually trigger a message
     setTimeout(() => {
+      // Access private ws property for testing
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const ws = (client as any).ws;
       if (ws && ws.onmessage) {
         ws.onmessage({
@@ -91,6 +105,8 @@ describe('ClawdbotClient', () => {
   test('should disconnect properly', () => {
     client.connect();
     client.disconnect();
+    // Access private ws property for testing
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((client as any).ws).toBeNull();
   });
 });
