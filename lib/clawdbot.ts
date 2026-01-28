@@ -40,6 +40,7 @@ export class ClawdbotClient {
   private messageHandlers: ((message: Message) => void)[] = [];
   private streamHandlers: ((content: string) => void)[] = [];
   private statusHandlers: ((status: 'connecting' | 'connected' | 'disconnected') => void)[] = [];
+  private requestId = 0;
 
   constructor(config: ClawdbotConfig) {
     this.config = config;
@@ -66,31 +67,8 @@ export class ClawdbotClient {
     }
 
     this.ws.onopen = () => {
-      console.log('✅ Connected to Clawdbot Gateway');
-      this.notifyStatus('connected');
-      
-      // Authenticate if token is provided
-      if (this.config.token) {
-        console.log('Sending auth token...');
-        this.send({
-          method: 'connect',
-          params: {
-            auth: {
-              token: this.config.token
-            }
-          }
-        });
-      }
-      
-      // Request chat history
-      console.log('Requesting chat history...');
-      this.send({
-        method: 'chat.history',
-        params: { 
-          sessionKey: 'jarvis-ui',
-          limit: 50 
-        }
-      });
+      console.log('🔌 WebSocket opened, waiting for challenge...');
+      // Don't set status to connected yet - wait for connect.challenge
     };
 
     this.ws.onmessage = (event) => {
@@ -98,10 +76,57 @@ export class ClawdbotClient {
         const data = JSON.parse(event.data);
         console.log('📨 Received:', data);
         
+        // Handle connect.challenge - respond with connect request
+        if (data.type === 'event' && data.event === 'connect.challenge') {
+          console.log('🔐 Received challenge, sending connect request...');
+          this.send({
+            type: 'req',
+            id: `${++this.requestId}`,
+            method: 'connect',
+            params: {
+              minProtocol: 3,
+              maxProtocol: 3,
+              client: {
+                id: 'jarvis-ui',
+                version: '0.1.1',
+                platform: 'web',
+                mode: 'operator'
+              },
+              role: 'operator',
+              scopes: ['operator.read', 'operator.write'],
+              auth: {
+                token: this.config.token
+              },
+              locale: 'en-US',
+              userAgent: 'jarvis-ui/0.1.1'
+            }
+          });
+          return;
+        }
+        
+        // Handle connect response
+        if (data.type === 'res' && data.payload?.type === 'hello-ok') {
+          console.log('✅ Connected successfully!');
+          this.notifyStatus('connected');
+          
+          // Request chat history
+          console.log('📜 Requesting chat history...');
+          this.send({
+            type: 'req',
+            id: `${++this.requestId}`,
+            method: 'chat.history',
+            params: { 
+              sessionKey: 'jarvis-ui',
+              limit: 50 
+            }
+          });
+          return;
+        }
+        
         // Handle chat.history response
-        if (data.result?.messages) {
-          console.log('📜 Loading chat history:', data.result.messages.length, 'messages');
-          data.result.messages.forEach((msg: any) => {
+        if (data.type === 'res' && data.payload?.messages) {
+          console.log('📜 Loading chat history:', data.payload.messages.length, 'messages');
+          data.payload.messages.forEach((msg: any) => {
             this.notifyMessage({
               role: msg.role,
               content: msg.content || '',
@@ -112,11 +137,13 @@ export class ClawdbotClient {
           return;
         }
         
-        // Handle chat messages
-        if (data.method === 'chat' && data.params?.message) {
-          const msg = data.params.message;
+        // Handle chat events (incoming messages)
+        if (data.type === 'event' && data.event === 'chat') {
+          const msg = data.payload?.message;
+          if (!msg) return;
+          
           const content = msg.content || '';
-          const isStreaming = data.params.streaming === true;
+          const isStreaming = data.payload.streaming === true;
           
           if (isStreaming) {
             // Streaming chunk - notify stream handlers
@@ -132,6 +159,7 @@ export class ClawdbotClient {
               isStreaming: false
             });
           }
+          return;
         }
       } catch (error) {
         console.error('Error parsing message:', error, event.data);
@@ -180,6 +208,8 @@ export class ClawdbotClient {
     }
 
     this.send({
+      type: 'req',
+      id: `${++this.requestId}`,
       method: 'chat.send',
       params
     });
@@ -191,6 +221,8 @@ export class ClawdbotClient {
    */
   abortMessage() {
     this.send({
+      type: 'req',
+      id: `${++this.requestId}`,
       method: 'chat.abort',
       params: {
         sessionKey: 'jarvis-ui'
